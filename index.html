@@ -708,7 +708,7 @@ setTimeout(()=>document.getElementById('loginUser').focus(),200);
 }
 function closeLogin(){document.getElementById('loginModal').classList.remove('open');}
 function doLogin(){
-const u=document.getElementById('loginUser').value;
+const u=document.getElementById('loginUser').value.trim();
 const p=document.getElementById('loginPass').value;
 if(u===ADMIN_USER&&p===ADMIN_PASS){
 isAdminLogged=true;
@@ -744,7 +744,7 @@ let products=[
 {id:6,emoji:"📱",name:"Soporte Celular",desc:"Ajustable y resistente",price:14.99,category:"Electrónica",badge:"",color:"#F0F8FF",stock:15,photos:[]},
 ];
 let cart=[], orders=[];
-let config={waNumber:"51999999999",yapeNumber:"999 999 999",yapeName:"Mi Tienda",storeName:"MiTienda Pro"};
+let config={waNumber:"51987845932",yapeNumber:"987845932",yapeName:"Ahorra Ya",storeName:"Ahorra Ya"};
 let activeCategory="Todos", nextId=10, selectedPayment="", currentStep=1, deliveryType="";
 
 function showPage(page){
