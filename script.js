@@ -5,7 +5,7 @@ let cart = [];
 
 // Configuración de la Tienda
 const config = {
-    whatsapp: "51987654321", // Cambia esto
+    whatsapp: "51987845932", // Cambia esto
     delivery: 10.00,
     minForDiscount: 100.00,
     discountRate: 0.10
