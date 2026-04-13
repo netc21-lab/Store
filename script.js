@@ -1,119 +1,112 @@
 
-// 1. Estado de la Aplicación
+// 1. CONFIGURACIÓN DE SEGURIDAD
+const ADMIN_PASSWORD = "miadmin2026"; // CAMBIA ESTA CLAVE AQUÍ
+let isAdminAuthenticated = false;
+
+// 2. ESTADO
 let products = JSON.parse(localStorage.getItem('vibe_products')) || [];
 let cart = [];
-
-// Configuración de la Tienda
 const config = {
-    whatsapp: "51987845932", // Cambia esto
-    delivery: 10.00,
-    minForDiscount: 100.00,
-    discountRate: 0.10
+    whatsapp: "51987845932", // Cambia a tu número
+    delivery: 8.00
 };
 
-// 2. Elementos del DOM
-const productGrid = document.getElementById('product-grid');
-const cartCount = document.getElementById('cart-count');
-const adminList = document.getElementById('admin-list');
+// 3. FUNCIONES DE PROTECCIÓN
+function checkAdminAccess() {
+    if (isAdminAuthenticated) {
+        openModal('admin-modal');
+        renderAdminList();
+    } else {
+        const pass = prompt("Introduce la contraseña de administrador:");
+        if (pass === ADMIN_PASSWORD) {
+            isAdminAuthenticated = true;
+            openModal('admin-modal');
+            renderAdminList();
+        } else {
+            alert("Contraseña incorrecta. Acceso denegado.");
+        }
+    }
+}
 
-// 3. Funciones de Renderizado
+function logoutAdmin() {
+    isAdminAuthenticated = false;
+    closeModal('admin-modal');
+    alert("Sesión cerrada.");
+}
+
+// 4. RENDERIZADO PÚBLICO
 function renderProducts() {
-    productGrid.innerHTML = '';
+    const grid = document.getElementById('product-grid');
+    grid.innerHTML = '';
     products.forEach((p, index) => {
-        productGrid.innerHTML += `
+        grid.innerHTML += `
             <div class="card">
-                <img src="${p.img || 'https://via.placeholder.com/400'}" alt="${p.name}">
-                <div class="card-body">
+                <img src="${p.img || 'https://via.placeholder.com/300'}" alt="${p.name}">
+                <div class="card-info">
                     <h3>${p.name}</h3>
-                    <p class="price-tag">S/ ${parseFloat(p.price).toFixed(2)}</p>
-                    <button class="btn-add" onclick="addToCart(${index})">Comprar Ahora</button>
+                    <p class="price">S/ ${parseFloat(p.price).toFixed(2)}</p>
+                    <button class="btn-buy" onclick="addToCart(${index})">Agregar</button>
                 </div>
             </div>
         `;
     });
 }
 
+// 5. RENDERIZADO PRIVADO (Solo si es admin)
 function renderAdminList() {
-    adminList.innerHTML = '<h3>Lista de Productos</h3>';
+    const list = document.getElementById('admin-list');
+    list.innerHTML = '<h3 style="margin:20px 0 10px 0">Inventario y Ganancias</h3>';
     products.forEach((p, index) => {
         const profit = p.price - p.cost;
-        adminList.innerHTML += `
-            <div style="background:#f9f9f9; padding:10px; margin:5px 0; border-radius:8px; font-size:13px;">
-                <strong>${p.name}</strong> | Stock: ${p.stock} <br>
-                Ganancia: S/ ${profit.toFixed(2)} (${((profit/p.cost)*100).toFixed(0)}%)
-                <button onclick="deleteProduct(${index})" style="color:red; float:right; border:none; background:none; cursor:pointer;">Eliminar</button>
+        list.innerHTML += `
+            <div style="background:#f4f4f4; padding:10px; border-radius:8px; margin-bottom:8px; font-size:12px; border-left:4px solid var(--primary);">
+                <strong>${p.name}</strong><br>
+                Costo: S/ ${p.cost} | Venta: S/ ${p.price}<br>
+                <span style="color:green; font-weight:bold;">Ganancia: S/ ${profit.toFixed(2)}</span>
+                <button onclick="deleteProduct(${index})" style="float:right; color:red; border:none; background:none; cursor:pointer;">Eliminar</button>
             </div>
         `;
     });
 }
 
-// 4. Lógica de Carrito
+// 6. CARRITO Y WHATSAPP
 function addToCart(index) {
     cart.push(products[index]);
-    updateCart();
+    document.getElementById('cart-count').innerText = cart.length;
+    updateCartUI();
 }
 
-function updateCart() {
-    cartCount.innerText = cart.length;
+function updateCartUI() {
     const itemsDiv = document.getElementById('cart-items');
     itemsDiv.innerHTML = '';
-    
     let subtotal = 0;
     cart.forEach((item, i) => {
         subtotal += parseFloat(item.price);
-        itemsDiv.innerHTML += `
-            <div style="display:flex; justify-content:space-between; padding:10px 0;">
-                <span>${item.name}</span>
-                <span>S/ ${item.price} <button onclick="removeFromCart(${i})" style="border:none; background:none;">🗑️</button></span>
-            </div>
-        `;
+        itemsDiv.innerHTML += `<div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+            <span>${item.name}</span><span>S/ ${item.price}</span></div>`;
     });
-
-    const discount = subtotal >= config.minForDiscount ? subtotal * config.discountRate : 0;
-    const total = subtotal - discount + config.delivery;
-
+    const total = subtotal + config.delivery;
     document.getElementById('subtotal').innerText = subtotal.toFixed(2);
-    document.getElementById('discount').innerText = discount.toFixed(2);
     document.getElementById('delivery-cost').innerText = config.delivery.toFixed(2);
     document.getElementById('total-price').innerText = total.toFixed(2);
 }
 
-function removeFromCart(i) {
-    cart.splice(i, 1);
-    updateCart();
-}
-
-// 5. WhatsApp Checkout
 document.getElementById('btn-whatsapp').onclick = () => {
     const name = document.getElementById('client-name').value;
-    const address = document.getElementById('client-address').value;
+    const addr = document.getElementById('client-address').value;
+    if(!name || !addr || cart.length === 0) return alert("Completa los datos del pedido");
+
+    let text = `🛍️ *PEDIDO MODAVIBE*\n\nCliente: ${name}\nDirección: ${addr}\n\n*Productos:*\n`;
+    cart.forEach(i => text += `- ${i.name} (S/ ${i.price})\n`);
+    text += `\n*Total a pagar: S/ ${document.getElementById('total-price').innerText}*`;
     
-    if(!name || !address || cart.length === 0) {
-        alert("Por favor completa tus datos y agrega productos.");
-        return;
-    }
-
-    let message = `*NUEVO PEDIDO - MODAVIBE*\n\n`;
-    message += `👤 *Cliente:* ${name}\n`;
-    message += `📍 *Dirección:* ${address}\n\n`;
-    message += `📦 *Productos:*\n`;
-    
-    cart.forEach(item => {
-        message += `- ${item.name} (S/ ${item.price})\n`;
-    });
-
-    const total = document.getElementById('total-price').innerText;
-    message += `\n💰 *Total a pagar: S/ ${total}*\n\n`;
-    message += `_Enviaré el comprobante de Yape a continuación._`;
-
-    const encoded = encodeURIComponent(message);
-    window.open(`https://api.whatsapp.com/send?phone=${config.whatsapp}&text=${encoded}`);
+    window.open(`https://api.whatsapp.com/send?phone=${config.whatsapp}&text=${encodeURIComponent(text)}`);
 };
 
-// 6. Gestión Admin
+// 7. EVENTOS ADMIN
 document.getElementById('product-form').onsubmit = (e) => {
     e.preventDefault();
-    const newProduct = {
+    const p = {
         name: document.getElementById('p-name').value,
         img: document.getElementById('p-img').value,
         price: parseFloat(document.getElementById('p-price').value),
@@ -121,29 +114,27 @@ document.getElementById('product-form').onsubmit = (e) => {
         stock: parseInt(document.getElementById('p-stock').value),
         category: document.getElementById('p-category').value
     };
-
-    products.push(newProduct);
+    products.push(p);
     localStorage.setItem('vibe_products', JSON.stringify(products));
     renderProducts();
     renderAdminList();
     e.target.reset();
 };
 
-function deleteProduct(index) {
-    products.splice(index, 1);
-    localStorage.setItem('vibe_products', JSON.stringify(products));
-    renderProducts();
-    renderAdminList();
+function deleteProduct(i) {
+    if(confirm("¿Eliminar este producto?")) {
+        products.splice(i, 1);
+        localStorage.setItem('vibe_products', JSON.stringify(products));
+        renderProducts();
+        renderAdminList();
+    }
 }
 
-// 7. Modales e Interacción
-document.getElementById('admin-btn').onclick = () => {
-    document.getElementById('admin-modal').style.display = 'block';
-    renderAdminList();
-};
-document.getElementById('cart-btn').onclick = () => document.getElementById('cart-modal').style.display = 'block';
-document.getElementById('close-cart').onclick = () => document.getElementById('cart-modal').style.display = 'none';
-document.getElementById('close-admin').onclick = () => document.getElementById('admin-modal').style.display = 'none';
+// 8. UTILIDADES MODAL
+function openModal(id) { document.getElementById(id).style.display = 'block'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+document.getElementById('admin-btn').onclick = checkAdminAccess;
+document.getElementById('cart-btn').onclick = () => openModal('cart-modal');
 
-// Inicialización
 renderProducts();
+
