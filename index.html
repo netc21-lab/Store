@@ -708,7 +708,7 @@ setTimeout(()=>document.getElementById('loginUser').focus(),200);
 }
 function closeLogin(){document.getElementById('loginModal').classList.remove('open');}
 function doLogin(){
-const u=document.getElementById('loginUser').value.trim();
+const u=document.getElementById('loginUser').value;
 const p=document.getElementById('loginPass').value;
 if(u===ADMIN_USER&&p===ADMIN_PASS){
 isAdminLogged=true;
